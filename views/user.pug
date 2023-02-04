@@ -1,0 +1,31 @@
+extends layout
+block content
+    h1= user
+    div
+        p Timesheet
+        table(border='1')
+            tr
+                th Name
+                th Mon
+                th Tue
+                th Wed
+                th Thu
+                th Fri
+                th Sat
+                th Sun
+            each hours,name in projects
+                tr
+                    td= name
+                    each hour in hours
+                        td(align='right')= hour.toFixed(2)
+    div
+        p User selection
+        form(action = `/${user}/updateusers`, method="POST")
+            table
+                each userelem in users
+                    tr
+                        td
+                            input(type='checkbox' name=userelem.id checked=userelem.assigned)
+                        td #{userelem.name}
+            br
+            button(type = "submit") Update Jira Users
