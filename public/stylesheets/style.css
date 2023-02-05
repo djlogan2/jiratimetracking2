@@ -6,3 +6,28 @@ body {
 a {
   color: #00B7FF;
 }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+}
+
+.tstable, .tstable td, .tstable th {
+  border: 1px solid;
+}
+
+.tstable {
+  /* background-color: chocolate; */
+  width: 100%;
+}
+
+.tdhour {
+  text-align: right;
+}
+
+.jira {
+  /* background-color: red; */
+}
+.timesheet {
+  /* background-color: green; */
+}

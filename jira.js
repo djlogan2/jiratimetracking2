@@ -2,9 +2,9 @@
 
 const https = require("https");
 const {getProperty} = require("./properties");
-const JIRAURL = "bofidev.atlassian.net";
-const JIRAUSERNAME = "David.Logan@axosadvisorservices.com";
-const JIRAPASSWORD = "y4Dpx23Z0Y41jQ627B2BC8CC";
+let JIRAURL;
+let JIRAUSERNAME;
+let JIRAPASSWORD;
 
 const previousMonday = new Date();
 previousMonday.setDate(previousMonday.getDate() - ((previousMonday.getDay() + 6) % 7 + 7));
@@ -18,7 +18,16 @@ const WORKLOGJQL = `worklogDate >= '${formattedPreviousMonday}' AND worklogDate 
 
 const test = true;
 
+async function loadProperties() {
+    if(!!JIRAURL)
+        return;
+    JIRAURL = await getProperty("JIRAURL");
+    JIRAUSERNAME = await getProperty("JIRAUSERNAME");
+    JIRAPASSWORD = await getProperty("JIRAPASSWORD");
+}
+
 async function makeJiraCall(path) {
+    await loadProperties();
     return new Promise((resolve, reject) => {
         const options = {
             hostname: `${JIRAURL}`,
@@ -29,6 +38,7 @@ async function makeJiraCall(path) {
             rejectUnauthorized: false,
             headers: {
                 'Authorization': `Basic ${Buffer.from(JIRAUSERNAME + ':' + JIRAPASSWORD).toString('base64')}`
+                //'Authorization': `Bearer ${JIRAPASSWORD}`
             }
         }
 
@@ -107,11 +117,11 @@ async function getAllUsers(passed_worklogs) {
 
 async function getEpic(jirakey) {
     const ticket = await makeJiraCall(`/rest/api/latest/search?jql=${encodeURI(`key=${jirakey}`)}`);
-    if(ticket.issues[0].fields.issuetype.name === "Epic") {
+    if (ticket.issues[0].fields.issuetype.name === "Epic") {
         return {jirakey, daptiv: ticket.issues[0].fields.customfield_10378};
     }
     const parent = ticket.issues[0].fields.parent;
-    if(!parent) {
+    if (!parent) {
         return null;
     }
     return await getEpic(parent.key);
