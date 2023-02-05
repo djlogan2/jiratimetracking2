@@ -8,17 +8,16 @@ const zeroarray = [0.0,0.0,0.0,0.0,0.0,0.0,0.0];
 
 async function render(req, res) {
     const users = [];
-    const tickets = await getAllUpdatedTickets();
-    let worklogs = await getAllWorklogTickets(tickets);
+    const {issues,dates} = await getAllUpdatedTickets(req.query.date);
+    let worklogs = await getAllWorklogTickets(issues);
     const all_users = await getAllUsers(worklogs);
     const assigned_users = await getProperty(req.params.id) || [];
 
     const projects = {"Non-Project work": [8.0, 8.0, 8.0, 8.0, 8.0, 0.0, 0.0]};
-    //, '102 Bugs: AAS': [...zeroarray], '119 Enhancements: AAS': [...zeroarray]};
 
     const issuetypes = {};
 
-    tickets.forEach(ticket => {
+    issues.forEach(ticket => {
         issuetypes[ticket.key] = ticket.fields.issuetype.name;
     });
 
@@ -54,7 +53,8 @@ async function render(req, res) {
     const options = {
         user: req.params.id,
         users,
-        projects
+        projects,
+        dates
     }
     res.render('user', options);
 }

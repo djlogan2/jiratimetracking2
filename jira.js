@@ -6,20 +6,29 @@ let JIRAURL;
 let JIRAUSERNAME;
 let JIRAPASSWORD;
 
-const previousMonday = new Date();
-previousMonday.setDate(previousMonday.getDate() - ((previousMonday.getDay() + 6) % 7 + 7));
-const followingSunday = new Date(previousMonday);
-followingSunday.setDate(previousMonday.getDate() + 6);
+function getDateStrings(dateinput) {
+    let previousMonday;
+    let previousweek = true;
+    if (!dateinput)
+        previousMonday = new Date();
+    else if (dateinput.toLowerCase() === "today") {
+        previousMonday = new Date();
+        previousweek = false;
+    } else {
+        previousMonday = new Date(`${dateinput}T00:00:00-07:00`);
+        previousweek = false;
+    }
 
-const formattedPreviousMonday = previousMonday.toISOString().split('T')[0];
-const formattedFollowingSunday = followingSunday.toISOString().split('T')[0];
-
-const WORKLOGJQL = `worklogDate >= '${formattedPreviousMonday}' AND worklogDate <= '${formattedFollowingSunday}'`;
-
-const test = true;
+    previousMonday.setDate(previousMonday.getDate() - ((previousMonday.getDay() + 6) % 7 + (previousweek ? 7 : 0)));
+    const followingSunday = new Date(previousMonday);
+    followingSunday.setDate(previousMonday.getDate() + 6);
+    const formattedPreviousMonday = previousMonday.toISOString().split('T')[0];
+    const formattedFollowingSunday = followingSunday.toISOString().split('T')[0];
+    return {start: formattedPreviousMonday, end: formattedFollowingSunday};
+}
 
 async function loadProperties() {
-    if(!!JIRAURL)
+    if (!!JIRAURL)
         return;
     JIRAURL = await getProperty("JIRAURL");
     JIRAUSERNAME = await getProperty("JIRAUSERNAME");
@@ -31,14 +40,12 @@ async function makeJiraCall(path) {
     return new Promise((resolve, reject) => {
         const options = {
             hostname: `${JIRAURL}`,
-            // port: 443,
             path: path,
             method: 'GET',
             timeout: 60000,
             rejectUnauthorized: false,
             headers: {
                 'Authorization': `Basic ${Buffer.from(JIRAUSERNAME + ':' + JIRAPASSWORD).toString('base64')}`
-                //'Authorization': `Bearer ${JIRAPASSWORD}`
             }
         }
 
@@ -59,7 +66,6 @@ async function makeJiraCall(path) {
 }
 
 async function getWorkLogTicket(jirakey) {
-    //"/rest/api/latest/issue/" + jiraKey + "/worklog"
     let startAt = 0;
     let done = false;
     const worklogs = [];
@@ -81,7 +87,9 @@ async function getWorkLogTicket(jirakey) {
     return worklogs;
 }
 
-async function getAllUpdatedTickets() {
+async function getAllUpdatedTickets(dateinput) {
+    const dates = getDateStrings(dateinput);
+    const WORKLOGJQL = `worklogDate >= '${dates.start}' AND worklogDate <= '${dates.end}'`;
     let startAt = 0;
     let done = false;
     const issues = [];
@@ -94,7 +102,7 @@ async function getAllUpdatedTickets() {
             done = true;
         }
     }
-    return issues;
+    return {issues,dates};
 }
 
 async function getAllWorklogTickets(updated_tickets) {
