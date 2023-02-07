@@ -33,8 +33,10 @@ async function render(req, res) {
     worklogs.forEach(wl => {
         wl.epic = epics[wl.jirakey];
         wl.issueType = issuetypes[wl.jirakey];
-        wl.day = wl.started.getDay() + 1;
-        if(wl.day === 7) wl.day = 0;
+        // Sun Mon Tue Wed Thu Fri Sat
+        //     Mon Tue Wed Thu Fri Sat Sun
+        wl.day = wl.started.getDay() - 1;
+        if(wl.day === -1) wl.day = 6;
         if(!wl.epic) wl.epic = {};
         if(!wl.epic.daptiv) {
             if(wl.issueType === "Bug")
