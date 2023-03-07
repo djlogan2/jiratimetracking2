@@ -1,6 +1,6 @@
 // noinspection SpellCheckingInspection
 
-var express = require('express');
+const express = require('express');
 const {getProperty, setProperty} = require("../properties");
 const {getAllUsers, getAllWorklogTickets, getEpic, getAllUpdatedTickets} = require("../jira");
 const router = express.Router();
@@ -9,6 +9,8 @@ const zeroarray = [0.0,0.0,0.0,0.0,0.0,0.0,0.0];
 async function render(req, res) {
     const users = [];
     const {issues,dates} = await getAllUpdatedTickets(req.query.date);
+    const startDate = new Date(`${dates.start}T00:00:00-07:00`);
+    const endDate = new Date(`${dates.end}T00:00:00-07:00`);
     let worklogs = await getAllWorklogTickets(issues);
     const all_users = await getAllUsers(worklogs);
     const assigned_users = await getProperty(req.params.id) || [];
@@ -26,7 +28,7 @@ async function render(req, res) {
     });
 
     const epics = {};
-    worklogs = worklogs.filter(wl => assigned_users.some(au => au === wl.updateAuthor.accountId));
+    worklogs = worklogs.filter(wl => assigned_users.some(au => au === wl.updateAuthor.accountId && wl.started >= startDate && wl.started < endDate));
     worklogs.forEach(wl => epics[wl.jirakey] = null);
     const wait_for_epics = Object.keys(epics).map(async key =>{epics[key] = await getEpic(key);});
     await Promise.all(wait_for_epics);
